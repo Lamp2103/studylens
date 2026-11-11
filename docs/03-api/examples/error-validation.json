@@ -1,0 +1,12 @@
+{
+  "error": {
+    "code": "validation_error",
+    "message": "Dữ liệu không hợp lệ.",
+    "fields": [
+      {
+        "field": "score",
+        "message": "Điểm không được lớn hơn điểm tối đa của bài (20)."
+      }
+    ]
+  }
+}

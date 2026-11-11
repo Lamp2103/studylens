@@ -1,0 +1,128 @@
+{
+  "as_of": "2026-11-12T11:00:00.000Z",
+  "items": [
+    {
+      "id": 1,
+      "rank": 1,
+      "type": "review_topic",
+      "topic": {
+        "id": 5,
+        "name": "Đồ thị"
+      },
+      "assessment": null,
+      "priority_score": 66.7,
+      "reason_text": "Điểm trung bình của chủ đề là 25%, thuộc mức yếu (dưới 50%). Bạn trả lời sai 15/20 câu (75%) ở các bài đã làm. Bài gần nhất (Đồ thị – Bài tập 2) đạt 20%, giảm 10 điểm % so với bài trước (30%).",
+      "reasons": [
+        {
+          "code": "low_average",
+          "detail": "Điểm trung bình của chủ đề là 25%, thuộc mức yếu (dưới 50%)."
+        },
+        {
+          "code": "many_wrong_answers",
+          "detail": "Bạn trả lời sai 15/20 câu (75%) ở các bài đã làm."
+        },
+        {
+          "code": "declining_trend",
+          "detail": "Bài gần nhất (Đồ thị – Bài tập 2) đạt 20%, giảm 10 điểm % so với bài trước (30%)."
+        }
+      ],
+      "metrics": {
+        "avg_pct": 25.0,
+        "done": 2,
+        "wrong_total": 15,
+        "total_questions": 20,
+        "wrong_rate_pct": 75.0,
+        "trend": {
+          "status": "down",
+          "delta_pct": -10.0,
+          "latest_pct": 20.0,
+          "previous_pct": 30.0
+        }
+      },
+      "resource_url": null,
+      "status": "pending",
+      "generated_at": "2026-11-12T11:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "rank": 2,
+      "type": "review_topic",
+      "topic": {
+        "id": 4,
+        "name": "Cây nhị phân"
+      },
+      "assessment": null,
+      "priority_score": 50.7,
+      "reason_text": "Điểm trung bình của chủ đề là 45%, thuộc mức yếu (dưới 50%). Bạn trả lời sai 11/20 câu (55%) ở các bài đã làm. Bài gần nhất (Cây nhị phân – Bài tập 2) đạt 40%, giảm 10 điểm % so với bài trước (50%).",
+      "reasons": [
+        {
+          "code": "low_average",
+          "detail": "Điểm trung bình của chủ đề là 45%, thuộc mức yếu (dưới 50%)."
+        },
+        {
+          "code": "many_wrong_answers",
+          "detail": "Bạn trả lời sai 11/20 câu (55%) ở các bài đã làm."
+        },
+        {
+          "code": "declining_trend",
+          "detail": "Bài gần nhất (Cây nhị phân – Bài tập 2) đạt 40%, giảm 10 điểm % so với bài trước (50%)."
+        }
+      ],
+      "metrics": {
+        "avg_pct": 45.0,
+        "done": 2,
+        "wrong_total": 11,
+        "total_questions": 20,
+        "wrong_rate_pct": 55.0,
+        "trend": {
+          "status": "down",
+          "delta_pct": -10.0,
+          "latest_pct": 40.0,
+          "previous_pct": 50.0
+        }
+      },
+      "resource_url": null,
+      "status": "pending",
+      "generated_at": "2026-11-12T11:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "rank": 3,
+      "type": "review_topic",
+      "topic": {
+        "id": 6,
+        "name": "Sắp xếp và tìm kiếm"
+      },
+      "assessment": null,
+      "priority_score": 49.5,
+      "reason_text": "Bạn trả lời sai 12/30 câu (40%) ở các bài đã làm. Bài gần nhất (Sắp xếp và tìm kiếm – Quiz) đạt 50%, giảm 30 điểm % so với bài trước (80%).",
+      "reasons": [
+        {
+          "code": "many_wrong_answers",
+          "detail": "Bạn trả lời sai 12/30 câu (40%) ở các bài đã làm."
+        },
+        {
+          "code": "declining_trend",
+          "detail": "Bài gần nhất (Sắp xếp và tìm kiếm – Quiz) đạt 50%, giảm 30 điểm % so với bài trước (80%)."
+        }
+      ],
+      "metrics": {
+        "avg_pct": 65.0,
+        "done": 2,
+        "wrong_total": 12,
+        "total_questions": 30,
+        "wrong_rate_pct": 40.0,
+        "trend": {
+          "status": "down",
+          "delta_pct": -30.0,
+          "latest_pct": 50.0,
+          "previous_pct": 80.0
+        }
+      },
+      "resource_url": null,
+      "status": "pending",
+      "generated_at": "2026-11-12T11:00:00.000Z"
+    }
+  ],
+  "empty_reason": null
+}

@@ -1,0 +1,12 @@
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIn0.chu-ky-vi-du-khong-co-that",
+  "token_type": "bearer",
+  "expires_in": 3600,
+  "user": {
+    "id": 2,
+    "username": "sv02",
+    "display_name": "Sinh viên 02 (mô phỏng)",
+    "role": "student",
+    "is_synthetic": true
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "as_of": "2026-11-12T11:00:00.000Z",
+  "current_week": 5,
+  "topic": {
+    "id": 4,
+    "name": "Cây nhị phân",
+    "order_no": 4,
+    "description": "Cây nhị phân, duyệt cây, cây tìm kiếm nhị phân.",
+    "avg_pct": 45.0,
+    "label": "weak",
+    "assessments_done": 2,
+    "assessments_assigned": 3,
+    "wrong_total": 11,
+    "total_questions": 20,
+    "wrong_rate_pct": 55.0,
+    "trend": {
+      "status": "down",
+      "delta_pct": -10.0,
+      "latest_pct": 40.0,
+      "previous_pct": 50.0
+    }
+  },
+  "assessments": [
+    {
+      "assessment_id": 9,
+      "title": "Cây nhị phân – Bài tập 1",
+      "type": "exercise",
+      "week_no": 3,
+      "total_questions": 10,
+      "max_score": 10.0,
+      "due_date": "2026-11-01",
+      "status": "done",
+      "latest": {
+        "id": 27,
+        "attempt_no": 1,
+        "score": 5.0,
+        "pct": 50.0,
+        "wrong_count": 5,
+        "started_at": "2026-10-31T05:27:13.000Z",
+        "completed_at": "2026-10-31T05:52:00.000Z",
+        "duration_seconds": 1487
+      },
+      "attempts": [
+        {
+          "id": 27,
+          "attempt_no": 1,
+          "score": 5.0,
+          "pct": 50.0,
+          "wrong_count": 5,
+          "started_at": "2026-10-31T05:27:13.000Z",
+          "completed_at": "2026-10-31T05:52:00.000Z",
+          "duration_seconds": 1487
+        }
+      ]
+    },
+    {
+      "assessment_id": 13,
+      "title": "Cây nhị phân – Bài tập 2",
+      "type": "exercise",
+      "week_no": 4,
+      "total_questions": 10,
+      "max_score": 10.0,
+      "due_date": "2026-11-08",
+      "status": "done",
+      "latest": {
+        "id": 30,
+        "attempt_no": 1,
+        "score": 4.0,
+        "pct": 40.0,
+        "wrong_count": 6,
+        "started_at": "2026-11-03T09:22:58.000Z",
+        "completed_at": "2026-11-03T09:50:00.000Z",
+        "duration_seconds": 1622
+      },
+      "attempts": [
+        {
+          "id": 30,
+          "attempt_no": 1,
+          "score": 4.0,
+          "pct": 40.0,
+          "wrong_count": 6,
+          "started_at": "2026-11-03T09:22:58.000Z",
+          "completed_at": "2026-11-03T09:50:00.000Z",
+          "duration_seconds": 1622
+        }
+      ]
+    },
+    {
+      "assessment_id": 15,
+      "title": "Cây nhị phân – Quiz",
+      "type": "quiz",
+      "week_no": 5,
+      "total_questions": 20,
+      "max_score": 20.0,
+      "due_date": "2026-11-15",
+      "status": "not_done",
+      "latest": null,
+      "attempts": []
+    }
+  ]
+}

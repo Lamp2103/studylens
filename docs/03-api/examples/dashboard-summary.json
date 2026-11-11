@@ -1,0 +1,44 @@
+{
+  "as_of": "2026-11-12T11:00:00.000Z",
+  "is_synthetic": true,
+  "course": {
+    "id": 1,
+    "code": "DEMO101",
+    "name": "Cấu trúc dữ liệu và giải thuật"
+  },
+  "current_week": 5,
+  "total_weeks": 6,
+  "average_pct": 65.0,
+  "completion": {
+    "done": 15,
+    "assigned": 17,
+    "pct": 88.2
+  },
+  "trend": {
+    "status": "down",
+    "delta_pct": -15.0,
+    "latest_week": 5,
+    "previous_week": 4
+  },
+  "study_time": {
+    "total_minutes": 693,
+    "current_week_minutes": 32
+  },
+  "label_counts": {
+    "strong": 2,
+    "medium": 2,
+    "weak": 2,
+    "insufficient": 0,
+    "no_data": 0
+  },
+  "lowest_topic": {
+    "id": 5,
+    "name": "Đồ thị",
+    "avg_pct": 25.0
+  },
+  "highest_topic": {
+    "id": 1,
+    "name": "Mảng và chuỗi",
+    "avg_pct": 91.7
+  }
+}

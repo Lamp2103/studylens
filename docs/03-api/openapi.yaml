@@ -1,0 +1,875 @@
+openapi: 3.1.0
+
+info:
+  title: StudyLens API
+  version: 0.1.0-draft
+  summary: Hợp đồng API giữa frontend (React) và backend (FastAPI) của StudyLens.
+  description: |
+    **Trạng thái: BẢN NHÁP (W1-B5), chờ hai thành viên chốt ở buổi họp hợp đồng API (W1-C4).**
+    Sau khi chốt, mọi thay đổi phải sửa file này TRƯỚC, báo người kia, rồi mới viết mã.
+
+    Phạm vi: chỉ các yêu cầu thuộc MVP (FR01 đến FR08, FR12). Các yêu cầu FR09, FR10, FR11 chưa có
+    endpoint; schema CSDL đã giữ sẵn chỗ cho chúng.
+
+    Cách tính mọi chỉ số, ngưỡng, nhãn và gợi ý được định nghĩa ở `metrics-definition.md`.
+    File này chỉ mô tả hình dạng dữ liệu; các mục "xem mục X" trỏ tới tài liệu đó.
+
+    ## Quy ước chung
+
+    - **Không có tiền tố `/api`** (khớp danh sách endpoint đã đề xuất). Nếu muốn thêm, chốt ở W1-C4.
+    - JSON dùng `snake_case`. Dữ liệu chỉ đọc (GET) luôn là dữ liệu của người đang đăng nhập.
+    - **Thời gian** là chuỗi ISO 8601 UTC kết thúc bằng `Z`, đúng 3 chữ số mili giây
+      (`2026-11-12T11:00:00.000Z`). Ngày là `YYYY-MM-DD`. "Tuần hiện tại" tính theo giờ Việt Nam.
+    - **Phần trăm** nằm trong 0 đến 100, đã làm tròn 1 chữ số thập phân (half-up). Nhãn và xu hướng
+      được tính từ chính các số đã làm tròn này, nên số hiển thị và nhãn luôn khớp nhau.
+    - **`null` nghĩa là "chưa có dữ liệu", KHÔNG phải 0.** Frontend phải hiển thị khác với điểm 0.
+    - Máy chủ chỉ trả **mã** cho nhãn và xu hướng (`strong`, `up`...). Chữ tiếng Việt hiển thị
+      lấy từ bảng ở `metrics-definition.md` mục 8, để frontend tự ánh xạ. Riêng `reason_text` và
+      `reasons[].detail` là câu tiếng Việt do máy chủ sinh.
+    - Không phân trang (dữ liệu nhỏ: một môn, vài chục bài).
+    - Mọi lỗi dùng chung một khuôn (`Error`). Lỗi kiểm tra dữ liệu là HTTP 422.
+
+    ## Xác thực
+
+    `POST /auth/login` trả JWT. Gửi kèm mọi request sau đó: `Authorization: Bearer <token>`.
+    Token hết hạn sau `expires_in` giây.
+  license:
+    name: Dùng nội bộ cho bài tập lớn
+
+servers:
+  - url: http://127.0.0.1:8000
+    description: Máy phát triển (uvicorn)
+
+tags:
+  - name: System
+    description: Kiểm tra hệ thống
+  - name: Auth
+    description: Đăng nhập, đăng xuất (FR01, FR12)
+  - name: Dashboard
+    description: Tổng quan (FR02)
+  - name: Topics
+    description: Kết quả theo chủ đề (FR03)
+  - name: Analysis
+    description: Điểm mạnh, điểm yếu (FR04)
+  - name: Recommendations
+    description: Gợi ý ôn tập và lý do (FR05, FR06)
+  - name: Progress
+    description: Tiến bộ theo tuần (FR07)
+  - name: Results
+    description: Cập nhật dữ liệu học tập (FR08)
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      operationId: getHealth
+      summary: Kiểm tra tình trạng hệ thống
+      description: Không cần đăng nhập. Trả 503 nếu không kết nối được cơ sở dữ liệu. Đã được cài đặt.
+      security: []
+      responses:
+        '200':
+          description: API và cơ sở dữ liệu hoạt động.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthResponse' }
+              examples:
+                ok:
+                  externalValue: examples/health.json
+        '503':
+          description: Không kết nối được cơ sở dữ liệu.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthResponse' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Đăng nhập
+      description: |
+        Sai tên đăng nhập hoặc sai mật khẩu đều trả **cùng một** lỗi 401 `invalid_credentials`,
+        không tiết lộ tài khoản có tồn tại hay không (NFR06).
+      x-requirements: [FR01]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+            examples:
+              demo:
+                externalValue: examples/auth-login-request.json
+      responses:
+        '200':
+          description: Đăng nhập thành công.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+              examples:
+                sv02:
+                  externalValue: examples/auth-login.json
+        '401':
+          description: Sai tên đăng nhập hoặc mật khẩu.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              examples:
+                invalid_credentials:
+                  externalValue: examples/error-invalid-credentials.json
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Đăng xuất
+      description: |
+        Kết thúc phiên. **Giới hạn của bản nháp:** JWT không có trạng thái nên máy chủ không thu hồi
+        được token; frontend phải xóa token và dữ liệu đã tải. Token vẫn còn hiệu lực đến khi hết hạn
+        nếu bị lấy trộm. Muốn thu hồi thật thì cần danh sách token bị thu hồi (xem
+        `metrics-definition.md` mục 9, điểm cần xác nhận).
+      x-requirements: [FR12]
+      responses:
+        '204':
+          description: Đã đăng xuất. Không có nội dung trả về.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      operationId: getCurrentUser
+      summary: Thông tin người đang đăng nhập
+      description: |
+        **Bổ sung ngoài danh sách ban đầu.** Frontend gọi khi tải lại trang để biết token còn hợp lệ
+        không và lấy lại tên hiển thị.
+      x-requirements: [FR01]
+      responses:
+        '200':
+          description: Người dùng hiện tại.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+              examples:
+                sv02:
+                  externalValue: examples/auth-me.json
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /dashboard/summary:
+    get:
+      tags: [Dashboard]
+      operationId: getDashboardSummary
+      summary: Tổng quan kết quả học tập
+      description: |
+        Các chỉ số của dashboard: điểm trung bình, tiến độ, xu hướng, thời gian học và số chủ đề
+        theo từng nhãn. Cách tính: `metrics-definition.md` mục 4.
+      x-requirements: [FR02]
+      responses:
+        '200':
+          description: Tổng quan.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DashboardSummary' }
+              examples:
+                sv02:
+                  externalValue: examples/dashboard-summary.json
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /topics:
+    get:
+      tags: [Topics]
+      operationId: listTopics
+      summary: Danh sách chủ đề kèm thống kê
+      description: Mọi chủ đề của môn, theo `order_no`, kể cả chủ đề chưa có dữ liệu.
+      x-requirements: [FR03, FR04]
+      responses:
+        '200':
+          description: Danh sách chủ đề.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TopicList' }
+              examples:
+                sv02:
+                  externalValue: examples/topics.json
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /topics/{topic_id}/results:
+    get:
+      tags: [Topics]
+      operationId: getTopicResults
+      summary: Kết quả chi tiết của một chủ đề
+      description: |
+        Thống kê chủ đề cùng danh sách bài và lịch sử các lần làm. Bài chưa giao
+        (`status = not_assigned`) vẫn được liệt kê để giao diện hiển thị đủ lộ trình.
+      x-requirements: [FR03]
+      parameters:
+        - name: topic_id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 4
+      responses:
+        '200':
+          description: Kết quả của chủ đề.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TopicResults' }
+              examples:
+                sv02_topic4:
+                  externalValue: examples/topic-results.json
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /analysis/strengths-weaknesses:
+    get:
+      tags: [Analysis]
+      operationId: getStrengthsWeaknesses
+      summary: Phân nhóm chủ đề theo điểm mạnh, điểm yếu
+      description: |
+        Chủ đề được chia vào 5 nhóm theo nhãn. Kèm các ngưỡng đang dùng để giao diện có thể giải thích
+        vì sao một chủ đề rơi vào nhóm đó (NFR05). Thứ tự trong nhóm: `strong` và `medium` điểm giảm
+        dần, `weak` điểm tăng dần (yếu nhất trước), hai nhóm còn lại theo `order_no`.
+      x-requirements: [FR04]
+      responses:
+        '200':
+          description: Các nhóm chủ đề.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StrengthsWeaknesses' }
+              examples:
+                sv02:
+                  externalValue: examples/analysis-strengths-weaknesses.json
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /recommendations:
+    get:
+      tags: [Recommendations]
+      operationId: listRecommendations
+      summary: Gợi ý ôn tập kèm lý do
+      description: |
+        Trả các gợi ý hiện hành (`is_current`), đã xếp theo `rank` (1 là ưu tiên cao nhất), tối đa 5.
+        Nếu sinh viên chưa có gợi ý nào được lưu thì máy chủ tính và lưu rồi mới trả. Gợi ý được tính
+        lại sau mỗi `POST /results`. Công thức: `metrics-definition.md` mục 5.
+
+        Khi `items` rỗng thì `empty_reason` khác `null` để giao diện hiển thị đúng thông điệp
+        (không phải lỗi); ngược lại `empty_reason` là `null`.
+      x-requirements: [FR05, FR06]
+      responses:
+        '200':
+          description: Danh sách gợi ý.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecommendationList' }
+              examples:
+                sv02:
+                  summary: Có 3 gợi ý
+                  externalValue: examples/recommendations.json
+                sv03_empty:
+                  summary: Không có gợi ý (mọi chủ đề đều mạnh)
+                  externalValue: examples/recommendations-empty.json
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /progress/weekly:
+    get:
+      tags: [Progress]
+      operationId: getWeeklyProgress
+      summary: Tiến bộ theo từng tuần
+      description: |
+        Luôn trả đủ mọi tuần từ 1 đến `total_weeks`. Tuần chưa tới có `state = future`, mọi số bằng
+        0 và `avg_pct = null`. Kết quả thuộc tuần giao của bài (`week_no`), không phải ngày nộp.
+        Xem `metrics-definition.md` mục 4.7.
+      x-requirements: [FR07]
+      responses:
+        '200':
+          description: Tiến bộ theo tuần.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WeeklyProgress' }
+              examples:
+                sv02:
+                  externalValue: examples/progress-weekly.json
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /results:
+    post:
+      tags: [Results]
+      operationId: createResult
+      summary: Ghi nhận một lần làm bài mới
+      description: |
+        Tạo thêm một lần làm (`attempt_no` tự tăng; lần làm cũ không bị ghi đè). Sau khi lưu, máy chủ
+        tính lại gợi ý trong cùng một giao dịch; frontend gọi lại các GET để làm mới giao diện.
+
+        Máy chủ kiểm tra những điều SQLite không kiểm tra được: `score <= max_score` của bài và
+        `wrong_count <= total_questions` của bài. Bài chưa giao (tuần giao lớn hơn tuần hiện tại)
+        bị từ chối bằng 409.
+      x-requirements: [FR08]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResultCreate' }
+            examples:
+              retry:
+                externalValue: examples/results-create-request.json
+      responses:
+        '201':
+          description: Đã lưu.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ResultCreated' }
+              examples:
+                retry:
+                  externalValue: examples/results-create-response.json
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: Không có bài với `assessment_id` này.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: Bài chưa được giao (`assessment_not_assigned`).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: Dữ liệu không hợp lệ (điểm vượt điểm tối đa, số câu sai vượt số câu, thời gian ở tương lai...).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              examples:
+                score_too_high:
+                  externalValue: examples/error-validation.json
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Chưa đăng nhập, token sai hoặc đã hết hạn.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          examples:
+            unauthorized:
+              externalValue: examples/error-unauthorized.json
+    NotFound:
+      description: Không tìm thấy tài nguyên.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Dữ liệu gửi lên không hợp lệ.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    # ------------------------------------------------------------------ kiểu cơ bản
+    Timestamp:
+      type: string
+      description: Thời điểm, ISO 8601 UTC, đúng 3 chữ số mili giây, kết thúc bằng `Z`.
+      pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$'
+      examples: ['2026-11-12T11:00:00.000Z']
+    Date:
+      type: string
+      description: Ngày `YYYY-MM-DD`.
+      pattern: '^\d{4}-\d{2}-\d{2}$'
+      examples: ['2026-10-12']
+    Percent:
+      type: number
+      description: Phần trăm từ 0 đến 100, làm tròn 1 chữ số thập phân.
+      minimum: 0
+      maximum: 100
+    PercentOrNull:
+      type: [number, 'null']
+      description: Phần trăm (0 đến 100, 1 chữ số thập phân) hoặc `null` khi chưa có dữ liệu. `null` KHÔNG phải 0.
+      minimum: 0
+      maximum: 100
+    DeltaPct:
+      type: [number, 'null']
+      description: Chênh lệch theo điểm phần trăm (có dấu), 1 chữ số thập phân. `null` khi chưa đủ dữ liệu để so sánh.
+      minimum: -100
+      maximum: 100
+    TimestampOrNull:
+      oneOf:
+        - { $ref: '#/components/schemas/Timestamp' }
+        - { type: 'null' }
+    Label:
+      type: string
+      description: |
+        Nhãn của chủ đề (`metrics-definition.md` mục 4.4).
+        `strong` từ 75% trở lên; `medium` từ 50% đến dưới 75%; `weak` dưới 50%;
+        `insufficient` có ít hơn 2 bài đã làm; `no_data` chưa làm bài nào.
+      enum: [strong, medium, weak, insufficient, no_data]
+    TrendStatus:
+      type: string
+      description: Xu hướng. `insufficient` nghĩa là chưa đủ dữ liệu để so sánh.
+      enum: [up, down, stable, insufficient]
+    AssessmentType:
+      type: string
+      enum: [exercise, quiz, exam]
+    ReasonCode:
+      type: string
+      description: Mã lý do của gợi ý (`metrics-definition.md` mục 5.1).
+      enum: [low_average, many_wrong_answers, declining_trend]
+
+    # ------------------------------------------------------------------ lỗi, hệ thống
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                - invalid_credentials
+                - unauthorized
+                - not_found
+                - validation_error
+                - assessment_not_assigned
+                - internal_error
+            message:
+              type: string
+              description: Thông báo tiếng Việt, hiển thị được cho người dùng. Không chứa chi tiết nội bộ.
+            fields:
+              type: array
+              description: 'Chỉ có với `validation_error`: lỗi theo từng trường.'
+              items:
+                type: object
+                required: [field, message]
+                properties:
+                  field: { type: string, examples: [score] }
+                  message: { type: string }
+    HealthResponse:
+      type: object
+      required: [status, database, app, version, environment, time]
+      properties:
+        status: { type: string, enum: [ok, degraded] }
+        database: { type: string, enum: [ok, error] }
+        app: { type: string }
+        version: { type: string }
+        environment: { type: string }
+        time: { type: string, description: 'ISO 8601 (múi giờ +00:00), chỉ để kiểm tra, không dùng để tính toán.' }
+
+    # ------------------------------------------------------------------ xác thực
+    User:
+      type: object
+      required: [id, username, display_name, role, is_synthetic]
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        display_name: { type: string }
+        role: { type: string, enum: [student, admin] }
+        is_synthetic:
+          type: boolean
+          description: '`true` = tài khoản và dữ liệu mô phỏng. Giao diện phải ghi rõ là dữ liệu thử nghiệm (NFR07).'
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string, minLength: 1, maxLength: 64 }
+        password: { type: string, minLength: 1, maxLength: 128 }
+    LoginResponse:
+      type: object
+      required: [access_token, token_type, expires_in, user]
+      properties:
+        access_token: { type: string }
+        token_type: { type: string, enum: [bearer] }
+        expires_in: { type: integer, minimum: 1, description: Số giây token còn hiệu lực. }
+        user: { $ref: '#/components/schemas/User' }
+
+    # ------------------------------------------------------------------ thành phần dùng chung
+    CourseRef:
+      type: object
+      required: [id, code, name]
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        name: { type: string }
+    TopicRef:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+    Trend:
+      type: object
+      description: Xu hướng theo tuần của cả môn (`metrics-definition.md` mục 4.7).
+      required: [status, delta_pct, latest_week, previous_week]
+      properties:
+        status: { $ref: '#/components/schemas/TrendStatus' }
+        delta_pct:
+          allOf: [{ $ref: '#/components/schemas/DeltaPct' }]
+          description: Điểm TB tuần gần nhất trừ điểm TB tuần liền trước (hai tuần gần nhất có dữ liệu).
+        latest_week: { type: [integer, 'null'], description: Số tuần gần nhất có dữ liệu. }
+        previous_week: { type: [integer, 'null'], description: Số tuần có dữ liệu liền trước. }
+    TopicTrend:
+      type: object
+      description: Xu hướng theo chủ đề, so bài gần nhất với bài liền trước (`metrics-definition.md` mục 4.8).
+      required: [status, delta_pct, latest_pct, previous_pct]
+      properties:
+        status: { $ref: '#/components/schemas/TrendStatus' }
+        delta_pct: { $ref: '#/components/schemas/DeltaPct' }
+        latest_pct: { $ref: '#/components/schemas/PercentOrNull' }
+        previous_pct: { $ref: '#/components/schemas/PercentOrNull' }
+    Completion:
+      type: object
+      description: Tiến độ hoàn thành (`metrics-definition.md` mục 4.6).
+      required: [done, assigned, pct]
+      properties:
+        done: { type: integer, minimum: 0, description: Số bài đã làm trong các bài đã giao. }
+        assigned: { type: integer, minimum: 0, description: Số bài đã giao đến tuần hiện tại. }
+        pct: { $ref: '#/components/schemas/PercentOrNull' }
+    TopicStat:
+      type: object
+      description: Thống kê một chủ đề của người dùng hiện tại.
+      required:
+        - id
+        - name
+        - order_no
+        - description
+        - avg_pct
+        - label
+        - assessments_done
+        - assessments_assigned
+        - wrong_total
+        - total_questions
+        - wrong_rate_pct
+        - trend
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        order_no: { type: integer, minimum: 1 }
+        description: { type: [string, 'null'] }
+        avg_pct:
+          allOf: [{ $ref: '#/components/schemas/PercentOrNull' }]
+          description: Điểm TB % các bài đã làm (lần làm gần nhất mỗi bài). `null` khi chưa làm bài nào.
+        label: { $ref: '#/components/schemas/Label' }
+        assessments_done: { type: integer, minimum: 0 }
+        assessments_assigned: { type: integer, minimum: 0 }
+        wrong_total: { type: integer, minimum: 0, description: Tổng số câu sai của các bài đã làm. }
+        total_questions: { type: integer, minimum: 0, description: Tổng số câu của các bài đã làm. }
+        wrong_rate_pct: { $ref: '#/components/schemas/PercentOrNull' }
+        trend: { $ref: '#/components/schemas/TopicTrend' }
+
+    # ------------------------------------------------------------------ dashboard
+    StudyTime:
+      type: object
+      required: [total_minutes, current_week_minutes]
+      properties:
+        total_minutes: { type: integer, minimum: 0 }
+        current_week_minutes: { type: integer, minimum: 0 }
+    LabelCounts:
+      type: object
+      description: Số chủ đề theo từng nhãn. Tổng bằng số chủ đề của môn.
+      required: [strong, medium, weak, insufficient, no_data]
+      properties:
+        strong: { type: integer, minimum: 0 }
+        medium: { type: integer, minimum: 0 }
+        weak: { type: integer, minimum: 0 }
+        insufficient: { type: integer, minimum: 0 }
+        no_data: { type: integer, minimum: 0 }
+    TopicHighlight:
+      type: [object, 'null']
+      description: Chủ đề điểm thấp nhất hoặc cao nhất trong các chủ đề đủ dữ liệu. `null` nếu chưa chủ đề nào đủ dữ liệu.
+      required: [id, name, avg_pct]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        avg_pct: { $ref: '#/components/schemas/Percent' }
+    DashboardSummary:
+      type: object
+      required:
+        - as_of
+        - is_synthetic
+        - course
+        - current_week
+        - total_weeks
+        - average_pct
+        - completion
+        - trend
+        - study_time
+        - label_counts
+        - lowest_topic
+        - highest_topic
+      properties:
+        as_of: { $ref: '#/components/schemas/Timestamp' }
+        is_synthetic: { type: boolean, description: Dữ liệu mô phỏng; hiển thị nhãn "dữ liệu thử nghiệm". }
+        course: { $ref: '#/components/schemas/CourseRef' }
+        current_week:
+          type: integer
+          minimum: 0
+          description: Tuần hiện tại của môn; 0 nghĩa là môn chưa bắt đầu (`metrics-definition.md` mục 4.1).
+        total_weeks: { type: integer, minimum: 1 }
+        average_pct:
+          allOf: [{ $ref: '#/components/schemas/PercentOrNull' }]
+          description: Điểm TB % của mọi bài đã làm (`metrics-definition.md` mục 4.9).
+        completion: { $ref: '#/components/schemas/Completion' }
+        trend: { $ref: '#/components/schemas/Trend' }
+        study_time: { $ref: '#/components/schemas/StudyTime' }
+        label_counts: { $ref: '#/components/schemas/LabelCounts' }
+        lowest_topic: { $ref: '#/components/schemas/TopicHighlight' }
+        highest_topic: { $ref: '#/components/schemas/TopicHighlight' }
+
+    # ------------------------------------------------------------------ chủ đề
+    TopicList:
+      type: object
+      required: [as_of, items]
+      properties:
+        as_of: { $ref: '#/components/schemas/Timestamp' }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/TopicStat' }
+    AttemptItem:
+      type: object
+      description: Một lần làm bài.
+      required: [id, attempt_no, score, pct, wrong_count, started_at, completed_at, duration_seconds]
+      properties:
+        id: { type: integer }
+        attempt_no: { type: integer, minimum: 1 }
+        score: { type: number, minimum: 0 }
+        pct: { $ref: '#/components/schemas/Percent' }
+        wrong_count: { type: integer, minimum: 0 }
+        started_at: { $ref: '#/components/schemas/TimestampOrNull' }
+        completed_at: { $ref: '#/components/schemas/Timestamp' }
+        duration_seconds: { type: [integer, 'null'], minimum: 0 }
+    AssessmentProgress:
+      type: object
+      required:
+        - assessment_id
+        - title
+        - type
+        - week_no
+        - total_questions
+        - max_score
+        - due_date
+        - status
+        - latest
+        - attempts
+      properties:
+        assessment_id: { type: integer }
+        title: { type: string }
+        type: { $ref: '#/components/schemas/AssessmentType' }
+        week_no: { type: integer, minimum: 1 }
+        total_questions: { type: integer, minimum: 1 }
+        max_score: { type: number, exclusiveMinimum: 0 }
+        due_date:
+          oneOf:
+            - { $ref: '#/components/schemas/Date' }
+            - { type: 'null' }
+        status:
+          type: string
+          description: '`not_assigned` = chưa tới tuần giao; `not_done` = đã giao, chưa làm; `done` = đã làm ít nhất một lần.'
+          enum: [not_assigned, not_done, done]
+        latest:
+          oneOf:
+            - { $ref: '#/components/schemas/AttemptItem' }
+            - { type: 'null' }
+          description: Lần làm gần nhất (lần được tính điểm). `null` nếu chưa làm.
+        attempts:
+          type: array
+          description: Mọi lần làm, `attempt_no` tăng dần.
+          items: { $ref: '#/components/schemas/AttemptItem' }
+    TopicResults:
+      type: object
+      required: [as_of, current_week, topic, assessments]
+      properties:
+        as_of: { $ref: '#/components/schemas/Timestamp' }
+        current_week: { type: integer, minimum: 0 }
+        topic: { $ref: '#/components/schemas/TopicStat' }
+        assessments:
+          type: array
+          description: Sắp theo `week_no`, rồi theo `assessment_id`.
+          items: { $ref: '#/components/schemas/AssessmentProgress' }
+
+    # ------------------------------------------------------------------ phân tích
+    StrengthsWeaknesses:
+      type: object
+      required: [as_of, thresholds, groups]
+      properties:
+        as_of: { $ref: '#/components/schemas/Timestamp' }
+        thresholds:
+          type: object
+          description: Các ngưỡng đang áp dụng, để giao diện giải thích nhãn (NFR05).
+          required: [strong_min_pct, medium_min_pct, min_assessments]
+          properties:
+            strong_min_pct: { type: number, examples: [75] }
+            medium_min_pct: { type: number, examples: [50] }
+            min_assessments: { type: integer, examples: [2] }
+        groups:
+          type: object
+          required: [strong, medium, weak, insufficient, no_data]
+          properties:
+            strong: { type: array, items: { $ref: '#/components/schemas/TopicStat' } }
+            medium: { type: array, items: { $ref: '#/components/schemas/TopicStat' } }
+            weak: { type: array, items: { $ref: '#/components/schemas/TopicStat' } }
+            insufficient: { type: array, items: { $ref: '#/components/schemas/TopicStat' } }
+            no_data: { type: array, items: { $ref: '#/components/schemas/TopicStat' } }
+
+    # ------------------------------------------------------------------ gợi ý
+    Reason:
+      type: object
+      required: [code, detail]
+      properties:
+        code: { $ref: '#/components/schemas/ReasonCode' }
+        detail:
+          type: string
+          description: Câu giải thích tiếng Việt, chỉ chứa số liệu có trong dữ liệu (NFR05).
+    RecommendationMetrics:
+      type: object
+      description: Số liệu làm căn cứ của gợi ý, để kiểm chứng lý do.
+      required: [avg_pct, done, wrong_total, total_questions, wrong_rate_pct, trend]
+      properties:
+        avg_pct: { $ref: '#/components/schemas/PercentOrNull' }
+        done: { type: integer, minimum: 0 }
+        wrong_total: { type: integer, minimum: 0 }
+        total_questions: { type: integer, minimum: 0 }
+        wrong_rate_pct: { $ref: '#/components/schemas/PercentOrNull' }
+        trend: { $ref: '#/components/schemas/TopicTrend' }
+    Recommendation:
+      type: object
+      required:
+        - id
+        - rank
+        - type
+        - topic
+        - assessment
+        - priority_score
+        - reason_text
+        - reasons
+        - metrics
+        - resource_url
+        - status
+        - generated_at
+      properties:
+        id: { type: integer }
+        rank: { type: integer, minimum: 1, description: 1 là ưu tiên cao nhất. }
+        type:
+          type: string
+          description: Bản MVP chỉ sinh `review_topic`; hai loại còn lại để dành.
+          enum: [review_topic, retry_assessment, practice_more]
+        topic: { $ref: '#/components/schemas/TopicRef' }
+        assessment:
+          type: [object, 'null']
+          description: Bài được gợi ý làm lại; `null` nếu gợi ý cả chủ đề.
+          required: [id, title]
+          properties:
+            id: { type: integer }
+            title: { type: string }
+        priority_score:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Điểm ưu tiên, 1 chữ số thập phân (`metrics-definition.md` mục 5.2).
+        reason_text:
+          type: string
+          description: Toàn bộ lý do ghép thành đoạn văn để hiển thị. Luôn khớp với `reasons`.
+        reasons:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/Reason' }
+        metrics: { $ref: '#/components/schemas/RecommendationMetrics' }
+        resource_url: { type: [string, 'null'], description: 'Tài liệu ôn tập. Luôn `null` ở bản MVP.' }
+        status:
+          type: string
+          description: Bản MVP luôn là `pending` (FR11 làm sau).
+          enum: [pending, accepted, dismissed, completed]
+        generated_at: { $ref: '#/components/schemas/Timestamp' }
+    RecommendationList:
+      type: object
+      required: [as_of, items, empty_reason]
+      properties:
+        as_of: { $ref: '#/components/schemas/Timestamp' }
+        items:
+          type: array
+          maxItems: 5
+          items: { $ref: '#/components/schemas/Recommendation' }
+        empty_reason:
+          type: [string, 'null']
+          description: |
+            `null` khi có gợi ý. Khi `items` rỗng:
+            `no_topic_needs_review` = các chủ đề đủ dữ liệu đều không cần ôn;
+            `insufficient_data` = chưa chủ đề nào đủ dữ liệu để gợi ý.
+          enum: [no_topic_needs_review, insufficient_data, null]
+
+    # ------------------------------------------------------------------ tiến bộ theo tuần
+    WeekTopic:
+      type: object
+      required: [topic_id, name, avg_pct, done]
+      properties:
+        topic_id: { type: integer }
+        name: { type: string }
+        avg_pct: { $ref: '#/components/schemas/Percent' }
+        done: { type: integer, minimum: 1 }
+    WeekProgress:
+      type: object
+      required: [week_no, state, avg_pct, assessments_done, assessments_assigned, by_topic]
+      properties:
+        week_no: { type: integer, minimum: 1 }
+        state:
+          type: string
+          description: So với tuần hiện tại.
+          enum: [past, current, future]
+        avg_pct: { $ref: '#/components/schemas/PercentOrNull' }
+        assessments_done: { type: integer, minimum: 0, description: Số bài của tuần này đã làm. }
+        assessments_assigned:
+          type: integer
+          minimum: 0
+          description: Số bài giao trong tuần này; 0 với tuần chưa tới (`future`).
+        by_topic:
+          type: array
+          description: Điểm TB % theo chủ đề trong tuần này; chỉ gồm chủ đề có bài đã làm.
+          items: { $ref: '#/components/schemas/WeekTopic' }
+    WeeklyProgress:
+      type: object
+      required: [as_of, current_week, total_weeks, trend, weeks]
+      properties:
+        as_of: { $ref: '#/components/schemas/Timestamp' }
+        current_week: { type: integer, minimum: 0 }
+        total_weeks: { type: integer, minimum: 1 }
+        trend: { $ref: '#/components/schemas/Trend' }
+        weeks:
+          type: array
+          description: Đủ mọi tuần từ 1 đến `total_weeks`, theo thứ tự.
+          items: { $ref: '#/components/schemas/WeekProgress' }
+
+    # ------------------------------------------------------------------ cập nhật kết quả
+    ResultCreate:
+      type: object
+      required: [assessment_id, score, wrong_count]
+      additionalProperties: false
+      properties:
+        assessment_id: { type: integer, minimum: 1 }
+        score: { type: number, minimum: 0, description: 'Điểm thô, không vượt `max_score` của bài.' }
+        wrong_count: { type: integer, minimum: 0, description: 'Số câu sai, không vượt `total_questions` của bài.' }
+        started_at:
+          allOf: [{ $ref: '#/components/schemas/Timestamp' }]
+          description: Không bắt buộc. Không được sau `completed_at`.
+        completed_at:
+          allOf: [{ $ref: '#/components/schemas/Timestamp' }]
+          description: Không bắt buộc, mặc định là thời điểm hiện tại. Không được ở tương lai.
+        duration_seconds: { type: integer, minimum: 0, description: Không bắt buộc. }
+    ResultCreated:
+      type: object
+      required: [result, recommendations_regenerated]
+      properties:
+        result:
+          allOf:
+            - { $ref: '#/components/schemas/AttemptItem' }
+            - type: object
+              required: [assessment_id, max_score]
+              properties:
+                assessment_id: { type: integer }
+                max_score: { type: number }
+        recommendations_regenerated:
+          type: boolean
+          description: 'Luôn `true` khi lưu thành công: gợi ý đã được tính lại.'

@@ -1,0 +1,15 @@
+{
+  "result": {
+    "id": 78,
+    "assessment_id": 15,
+    "attempt_no": 1,
+    "score": 12.0,
+    "max_score": 20.0,
+    "pct": 60.0,
+    "wrong_count": 8,
+    "started_at": "2026-11-12T10:05:00.000Z",
+    "completed_at": "2026-11-12T10:30:00.000Z",
+    "duration_seconds": 1500
+  },
+  "recommendations_regenerated": true
+}

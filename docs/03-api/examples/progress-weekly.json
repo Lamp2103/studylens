@@ -1,0 +1,156 @@
+{
+  "as_of": "2026-11-12T11:00:00.000Z",
+  "current_week": 5,
+  "total_weeks": 6,
+  "trend": {
+    "status": "down",
+    "delta_pct": -15.0,
+    "latest_week": 5,
+    "previous_week": 4
+  },
+  "weeks": [
+    {
+      "week_no": 1,
+      "state": "past",
+      "avg_pct": 90.0,
+      "assessments_done": 3,
+      "assessments_assigned": 3,
+      "by_topic": [
+        {
+          "topic_id": 1,
+          "name": "Mảng và chuỗi",
+          "avg_pct": 100.0,
+          "done": 1
+        },
+        {
+          "topic_id": 2,
+          "name": "Danh sách liên kết",
+          "avg_pct": 90.0,
+          "done": 1
+        },
+        {
+          "topic_id": 6,
+          "name": "Sắp xếp và tìm kiếm",
+          "avg_pct": 80.0,
+          "done": 1
+        }
+      ]
+    },
+    {
+      "week_no": 2,
+      "state": "past",
+      "avg_pct": 80.0,
+      "assessments_done": 3,
+      "assessments_assigned": 3,
+      "by_topic": [
+        {
+          "topic_id": 1,
+          "name": "Mảng và chuỗi",
+          "avg_pct": 90.0,
+          "done": 1
+        },
+        {
+          "topic_id": 2,
+          "name": "Danh sách liên kết",
+          "avg_pct": 80.0,
+          "done": 1
+        },
+        {
+          "topic_id": 3,
+          "name": "Ngăn xếp và hàng đợi",
+          "avg_pct": 70.0,
+          "done": 1
+        }
+      ]
+    },
+    {
+      "week_no": 3,
+      "state": "past",
+      "avg_pct": 65.0,
+      "assessments_done": 3,
+      "assessments_assigned": 4,
+      "by_topic": [
+        {
+          "topic_id": 1,
+          "name": "Mảng và chuỗi",
+          "avg_pct": 85.0,
+          "done": 1
+        },
+        {
+          "topic_id": 3,
+          "name": "Ngăn xếp và hàng đợi",
+          "avg_pct": 60.0,
+          "done": 1
+        },
+        {
+          "topic_id": 4,
+          "name": "Cây nhị phân",
+          "avg_pct": 50.0,
+          "done": 1
+        }
+      ]
+    },
+    {
+      "week_no": 4,
+      "state": "past",
+      "avg_pct": 50.0,
+      "assessments_done": 4,
+      "assessments_assigned": 4,
+      "by_topic": [
+        {
+          "topic_id": 2,
+          "name": "Danh sách liên kết",
+          "avg_pct": 70.0,
+          "done": 1
+        },
+        {
+          "topic_id": 3,
+          "name": "Ngăn xếp và hàng đợi",
+          "avg_pct": 60.0,
+          "done": 1
+        },
+        {
+          "topic_id": 4,
+          "name": "Cây nhị phân",
+          "avg_pct": 40.0,
+          "done": 1
+        },
+        {
+          "topic_id": 5,
+          "name": "Đồ thị",
+          "avg_pct": 30.0,
+          "done": 1
+        }
+      ]
+    },
+    {
+      "week_no": 5,
+      "state": "current",
+      "avg_pct": 35.0,
+      "assessments_done": 2,
+      "assessments_assigned": 3,
+      "by_topic": [
+        {
+          "topic_id": 5,
+          "name": "Đồ thị",
+          "avg_pct": 20.0,
+          "done": 1
+        },
+        {
+          "topic_id": 6,
+          "name": "Sắp xếp và tìm kiếm",
+          "avg_pct": 50.0,
+          "done": 1
+        }
+      ]
+    },
+    {
+      "week_no": 6,
+      "state": "future",
+      "avg_pct": null,
+      "assessments_done": 0,
+      "assessments_assigned": 0,
+      "by_topic": []
+    }
+  ]
+}
